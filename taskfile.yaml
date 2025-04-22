@@ -1,0 +1,10 @@
+version: '3'
+
+includes:
+  labs: task/taskfile-labs.yaml
+  check: task/taskfile-check.yaml
+
+tasks:
+  default:
+    cmds:
+      - task -l

@@ -1,0 +1,26 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: ops
+---
+
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: evil-here 
+---
+
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: dev
+---
+
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: prod
+---
+
+
+

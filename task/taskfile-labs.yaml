@@ -1,0 +1,50 @@
+version: '3'
+
+vars:
+  KUBE_VERSION: v1.32.0
+
+tasks:
+  start:
+    desc: Start the lab
+    cmds:
+      - task: bootstrap-minikube
+      - task: bootstrap-resources
+    
+  stop:
+    desc: Stop the lab
+    cmds:
+      - minikube stop
+
+  clean:
+    desc: restore the lab to the initial state
+    cmds:
+      - minikube stop
+      - minikube delete
+      
+
+  bootstrap-minikube:
+    desc: Bootstrap minikube
+    internal: true
+    cmds:
+      - minikube start --kubernetes-version={{.KUBE_VERSION}} --cni=calico
+    status:
+      - minikube status
+    
+  bootstrap-resources:
+    desc: Bootstrap resources
+    internal: true
+    cmds:
+      - kubectl apply -f resources/namespaces.yml
+
+  teardown-resources:
+    desc: Teardown resources
+    internal: true
+    cmds:
+      - kubectl delete -f resources/namespaces.yml
+
+  ready-check:
+    desc: Check if everything is ready for the lab
+    internal: true
+    cmds:
+      - minikube status
+      - docker ps
