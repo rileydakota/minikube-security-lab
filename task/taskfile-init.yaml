@@ -1,0 +1,12 @@
+version: '3'
+
+tasks:
+  install-docker:
+    desc: Install Docker
+    cmds:
+      - brew install --cask docker
+
+  install-minikube:
+    desc: Install Minikube
+    cmds:
+      - brew install minikube

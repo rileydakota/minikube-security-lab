@@ -2,7 +2,7 @@ version: '3'
 
 vars:
   KUBE_VERSION: v1.32.0
-
+  MINIKUBE_DRIVER: docker
 tasks:
   start:
     desc: Start the lab
@@ -17,6 +17,7 @@ tasks:
 
   clean:
     desc: restore the lab to the initial state
+    prompt: Are you sure you want to restore the lab to the initial state? This will delete all the resources and the minikube cluster.
     cmds:
       - minikube stop
       - minikube delete
@@ -26,7 +27,7 @@ tasks:
     desc: Bootstrap minikube
     internal: true
     cmds:
-      - minikube start --kubernetes-version={{.KUBE_VERSION}} --cni=calico
+      - minikube start --kubernetes-version={{.KUBE_VERSION}} --cni=calico --driver={{.MINIKUBE_DRIVER}}
     status:
       - minikube status
     
@@ -38,6 +39,7 @@ tasks:
 
   teardown-resources:
     desc: Teardown resources
+    prompt: Are you sure you want to teardown the resources?
     internal: true
     cmds:
       - kubectl delete -f resources/namespaces.yml
