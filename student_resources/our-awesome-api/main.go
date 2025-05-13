@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 )
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.Path)
 	fmt.Fprintf(w, "Hello, World!")
 }
 
 func main() {
-
 	
 	http.HandleFunc("/", helloHandler)
 	

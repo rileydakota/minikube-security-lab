@@ -1,8 +1,6 @@
-# minikube-security-lab
+# Kubernetes Security lab with Minikube!
 
-#### Kubernetes Security lab with Minikube!
-
-# In this lab, you will learn how to:
+In this lab, you will learn how to:
 
 - Build and Deploy a containerized application to Kubernetes
 - Expose your web service to make it accessible outside of the cluster
@@ -13,17 +11,25 @@
 
 ### Getting Started
 
-    The lab assumes you are using MacOS. To start, make sure you have brew installed! 
+The lab assumes you are using MacOS. To start, make sure you have brew installed! 
 
-    The lab uses [Taskfiles](https://taskfile.dev) to automate management of the lab, install it:
+The lab uses [Taskfiles](https://taskfile.dev) to automate management of the lab, install it:
 
-    `brew install go-task/tap/go-task`
+`brew install go-task/tap/go-task`
 
-    You will also need either docker or podman as a container runtime, please install one of the following:
+You will also need either docker or podman as a container runtime, please install one of the following:
 
-    - Docker Desktop
-    - Podman
-    
+- Docker Desktop
+- Podman
+
+
+With all of that out of the way, start the lab by running the following:
+
+`task labs:start`
+
+This may take a few minutes to run.
+
+
     
 
 
