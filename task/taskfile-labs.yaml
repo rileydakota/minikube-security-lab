@@ -35,14 +35,14 @@ tasks:
     desc: Bootstrap resources
     internal: true
     cmds:
-      - kubectl apply -f resources/namespaces.yml
+      - kubectl apply -f internal_resources/namespaces.yml
 
   teardown-resources:
     desc: Teardown resources
     prompt: Are you sure you want to teardown the resources?
     internal: true
     cmds:
-      - kubectl delete -f resources/namespaces.yml
+      - kubectl delete -f internal_resources/namespaces.yml
 
   ready-check:
     desc: Check if everything is ready for the lab
