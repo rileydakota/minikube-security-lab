@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: awesome-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    app: awesome-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awesome-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: awesome-api
+  template:
+    metadata:
+      labels:
+        app: awesome-api
+    spec:
+      containers:
+      - name: awesome-api
+        image: awesome-api:v1.0
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080

