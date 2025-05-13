@@ -4,9 +4,8 @@ WORKDIR /app
 COPY go.mod .
 COPY go.sum .
 COPY main.go .
-ARG GOOS=linux
-ARG GOARCH=amd64
-RUN CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -o evilpod -v
+
+RUN CGO_ENABLED=0 go build -o evilpod -v
 
 # Download LetsEncrypt root certs
 RUN wget https://letsencrypt.org/certs/isrgrootx1.pem -O /tmp/isrgrootx1.pem && \
