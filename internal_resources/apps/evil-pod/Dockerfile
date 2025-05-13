@@ -4,7 +4,9 @@ WORKDIR /app
 COPY go.mod .
 COPY go.sum .
 COPY main.go .
-RUN CGO_ENABLED=0 GOOS=linux go build -o evilpod
+ARG GOOS=linux
+ARG GOARCH=amd64
+RUN CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -o evilpod -v
 
 # Final stage
 FROM scratch
