@@ -28,7 +28,6 @@ jobs:
             arch: amd64
           - os: linux
             arch: arm64
-    continue-on-error: true
     permissions:
       contents: read
       packages: write
