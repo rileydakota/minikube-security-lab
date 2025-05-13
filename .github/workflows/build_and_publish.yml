@@ -23,8 +23,6 @@ jobs:
         app:
           - name: evil-pod
             path: internal_resources/apps/evil-pod
-          - name: our-awesome-api
-            path: internal_resources/apps/our-awesome-api
         platform:
           - os: linux
             arch: amd64
