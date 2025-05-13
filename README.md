@@ -31,6 +31,18 @@ This may take a few minutes to run.
 
 
 # Step one - Deploy our awesome api service
+
+<details>
+  <summary>Answer</summary>
+  
+  ```yaml
+  answer:
+    answer_again
+    answer_yet_again
+  ```
+</details>
+
+
 # Step two - oh no, evil!
 # Step three - container hardening
 # Step four - exploiting a vulnerable service
