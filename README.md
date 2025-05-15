@@ -138,6 +138,7 @@ docker build . -t awesome-api:v1.0
 Now that our image is built and published to the Docker runtime within our cluster, we need to create the resources that represent our application on the minikube cluster. Kubectl offers two methods for creating and managing resources on our clusters:
 
 **Imperative**: We can directly create resources using kubectl commands such as run, expose, create, update, or delete. See https://kubernetes.io/docs/tasks/manage-kubernetes-objects/imperative-command/ in the Kubernetes docs for more info
+
 **Declarative**: We can express our desired resource configurations in manifest files, and utilize `kubectl apply` to manage the lifecycle of those objects. Kubectl uses an annotation `kubectl.kubernetes.io/last-applied-configuration` to manage the state, and determine when updates are needed between the local configuration and actual configuration.
 
 For this step, we will utilize declarative configuration by creating a manifest file to represent our service. We need to create:
