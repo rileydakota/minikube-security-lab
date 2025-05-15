@@ -25,7 +25,9 @@ You will also need either docker or podman as a container runtime, please instal
 
 With all of that out of the way, start the lab by running the following:
 
-`task labs:start`
+```bash
+task labs:start
+```
 
 This may take a few minutes to run.
 
@@ -33,34 +35,45 @@ This may take a few minutes to run.
 
 Most interactions with K8s are performed via kubectl, a CLI tool designed for interacting with the Kubernetes API Server. We can use the built in whoami command to figure out what authentication context we are running in:
 
-`kubectl auth whoami`
+```bash
+kubectl auth whoami
+```
 
 Kubectl relies on configurations (and sometimes credentials) in a file known as the `kubeconfig` file. Lets take a look at ours:
 
-`cat ~/.kube/config`
+```bash
+cat ~/.kube/config
+```
 
 As part of the lab setup, a client certificate and key were configured in your Kubeconfig to be able to access minikube. This is okay for a lab environment, but not ideal in the real world. Kubernetes has a number of options for [authentication](https://kubernetes.io/docs/reference/access-authn-authz/authentication/), and the managed Kubernetes offerings use their respective cloud provider credentials for authentication.
 
 Kubernetes applications and configurations are expressed via "Resources". We can view what types of resources are available on the cluster using the api-resources command:
 
-`kubectl api-resources`
+```bash
+kubectl api-resources
+```
 
 Seem overwhelming? Don't worry, we will only need a small number of these in the lab. Each of these resources has its own configurations. Lucky for us, kubectl has a built in command that allows us to retrieve the fields and associated documentation. Lets try this for the `pod` resource type:
 
-`kubectl explain pod`
-`kubectl explain pod.spec`
+```bash
+kubectl explain pod
+```
+
+```bash
+kubectl explain pod.spec
+```
 
 
 Lets use some basic commands to see whats on our running cluster:
 
-`kubectl get namespaces`
-`kubectl get pods`
-`kubectl get networkpolicies`
-`kubectl get validatingadmissionpolicy`
+```bash
+kubectl get namespaces
+kubectl get pods
+kubectl get networkpolicies
+kubectl get validatingadmissionpolicy
+```
 
-
-
-
+--------
 
 # Step one - Deploy our awesome api service
 
