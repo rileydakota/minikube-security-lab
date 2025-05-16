@@ -31,6 +31,7 @@ func NewStore() *Store {
 }
 
 var store = NewStore()
+var scannedServices = make(map[string]bool)
 
 // Common admin endpoints to probe
 var adminEndpoints = []string{
@@ -106,10 +107,15 @@ func checkK8sServices(clientset *kubernetes.Clientset, targetNS string) {
 
 	fmt.Printf("\nServices in namespace %s:\n", targetNS)
 	for _, svc := range services.Items {
+		// Skip if we've already scanned this service
+		if scannedServices[svc.Name] {
+			continue
+		}
+
 		fmt.Printf("- %s\n", svc.Name)
 		fmt.Printf("  Type: %s\n", svc.Spec.Type)
 		fmt.Printf("  ClusterIP: %s\n", svc.Spec.ClusterIP)
-		if len(svc.Spec.Ports) > 0 {
+		if len(svc.Spec.Ports) > 0 && svc.Name != "kubernetes" {
 			fmt.Printf("  Ports:\n")
 			for _, port := range svc.Spec.Ports {
 				fmt.Printf("    - %d/%s\n", port.Port, port.Protocol)
@@ -117,6 +123,7 @@ func checkK8sServices(clientset *kubernetes.Clientset, targetNS string) {
 				if (port.Port == 80 || port.Port == 443 || port.Port == 8080) && port.Protocol == "TCP" {
 					serviceURL := fmt.Sprintf("%s:%d", svc.Spec.ClusterIP, port.Port)
 					go probeService(serviceURL)
+					scannedServices[svc.Name] = true
 				}
 			}
 		}
