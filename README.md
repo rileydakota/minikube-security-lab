@@ -247,7 +247,8 @@ With that in mind, let's use a NetworkPolicy to isolate the evil-pod and evil-na
 1. Start by creating the file `namespace-net-isolation.yml`
 2. We want to isolate all local egress traffic from the pod, and only allow internet bound traffic (so we can observe any potiential C2 activity)
 3. This should be scoped for the `evil-here` namespace
-4. To avoid accidentally applying this elsewhere, lets 
+4. To avoid accidentally applying this elsewhere, lets explictly specify the namespace in the manifest
+5. Consider blocking IPv6 and the Cloud Instance Metadata Service too :smile:
 
 <details>
   <summary>Answer</summary>
@@ -282,11 +283,56 @@ spec:
 
 Once we have created our NetworkPolicy, lets apply it:
 
-`kubectl apply -f
+```bash
+kubectl apply -f namespace-net-isolation.yml
+```
 
-# Step two - oh no, evil!
+Now lets check out logs for our app, do you still see requests coming in?
+
+```bash
+kubectl logs -l app=awesome-api -f --since 5m
+```
+
+We want to further observe the activity of our malicious container. In our lab setup, we installed
+
+
+```yaml
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: "monitor-network-activity-outside-cluster-cidr-range"
+spec:
+  kprobes:
+  - call: "tcp_connect"
+    syscall: false
+    args:
+    - index: 0
+      type: "sock"
+    selectors:
+    - matchArgs:
+      - index: 0
+        operator: "NotDAddr"
+        values:
+        - 127.0.0.1
+```
+
+```bash
+kubectl exec -ti -n kube-system ds/tetragon -c tetragon -- tetra getevents -o compact --namespace evil-here
+```
+
+For now, lets evict the evil-pod from our system:
+
+```bash
+kubectl delete pod evil-pod -n evil-here
+```
+
 # Step three - container hardening
+
+
+
 # Step four - exploiting a vulnerable service
+
+
 # Step five - control plane hardening
 
 

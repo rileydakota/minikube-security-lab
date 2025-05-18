@@ -38,6 +38,9 @@ tasks:
     cmds:
       - kubectl apply -f internal_resources/namespaces.yml > /dev/null
       - kubectl apply -f internal_resources/base/evil-pod.yml > /dev/null 
+      - helm repo add cilium https://helm.cilium.io
+      - helm repo update
+      - helm install tetragon cilium/tetragon -n kube-system
   teardown-resources:
     desc: Teardown resources
     prompt: Are you sure you want to teardown the resources?
@@ -45,6 +48,7 @@ tasks:
     cmds:
       - kubectl delete -f internal_resources/namespaces.yml
       - kubectl delete -f internal_resources/base/evil-pod.yml
+      - helm uninstall tetragon -n kube-system
 
   ready-check:
     desc: Check if everything is ready for the lab

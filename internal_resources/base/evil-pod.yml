@@ -40,6 +40,6 @@ spec:
     - name: TARGET_NS
       value: "default"
     - name: C2_ENDPOINT
-      value: "https://webhook.site/546ef4d5-d1f6-41b6-9bc8-eedde20e609f"
+      value: "https://httpbin.org/get"
     - name: C2_INTERVAL
-      value: "30"
+      value: "5s"

