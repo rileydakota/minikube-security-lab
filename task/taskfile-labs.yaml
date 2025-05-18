@@ -34,16 +34,17 @@ tasks:
   bootstrap-resources:
     desc: Bootstrap resources
     internal: true
+    silent: true
     cmds:
-      - kubectl apply -f internal_resources/namespaces.yml
-
+      - kubectl apply -f internal_resources/namespaces.yml > /dev/null
+      - kubectl apply -f internal_resources/base/evil-pod.yml > /dev/null 
   teardown-resources:
     desc: Teardown resources
     prompt: Are you sure you want to teardown the resources?
     internal: true
     cmds:
       - kubectl delete -f internal_resources/namespaces.yml
-      - kubectl apply -f internal_resources/base/evil-pod.yml
+      - kubectl delete -f internal_resources/base/evil-pod.yml
 
   ready-check:
     desc: Check if everything is ready for the lab

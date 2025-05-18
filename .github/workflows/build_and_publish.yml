@@ -4,10 +4,8 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'README.md'
-      - 'taskfile.yml'
-      - 'task/**'
+    paths:
+      - 'internal_resources/apps/**'
   workflow_dispatch:
     inputs:
       tag:

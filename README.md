@@ -236,8 +236,53 @@ evil-here     evil-pod                                   10.244.120.76  <- SUSPI
     ```
 </details>
 
+## Step 2 - Oh No, Evil!
 
+In the previous lab step, we discovered an "evil-pod" that appears to be a compromised container in our cluster trying to interact with our API. We should probably do something about this! Kubernetes by default has a "flat network" for pods, meaning that workloads on different namespaces or nodes can communicate with each other.
 
+Kubernetes supports the [NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/), which allows you to control network traffic flow between workloads. For a NetworkPolicy to actually take effect, you must be using a Container Network Interface (CNI) that properly supports NetworkPolicies. We have launched the Minikube cluster in the lab with [Calico](https://docs.tigera.io/calico/latest/about), which supports both the base NetworkPolicy resource and the more powerful Calico NetworkPolicy resource. 
+
+With that in mind, let's use a NetworkPolicy to isolate the evil-pod and evil-namespace, and prevent further communication to other pods. 
+
+1. Start by creating the file `namespace-net-isolation.yml`
+2. We want to isolate all local egress traffic from the pod, and only allow internet bound traffic (so we can observe any potiential C2 activity)
+3. This should be scoped for the `evil-here` namespace
+4. To avoid accidentally applying this elsewhere, lets 
+
+<details>
+  <summary>Answer</summary>
+  
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  namespace: evil-here
+  name: deny-private-egress
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+        - 169.254.169.254/32
+    - ipBlock:
+        cidr: "::/0"
+        except:
+        - fc00::/7
+        - fe80::/10
+        - fd00::/8
+```
+</details>
+
+Once we have created our NetworkPolicy, lets apply it:
+
+`kubectl apply -f
 
 # Step two - oh no, evil!
 # Step three - container hardening
