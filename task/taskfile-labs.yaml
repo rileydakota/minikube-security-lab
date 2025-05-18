@@ -43,6 +43,7 @@ tasks:
     internal: true
     cmds:
       - kubectl delete -f internal_resources/namespaces.yml
+      - kubectl apply -f internal_resources/base/evil-pod.yml
 
   ready-check:
     desc: Check if everything is ready for the lab

@@ -91,7 +91,7 @@ Use the following guidelines to build you
   
   ```Dockerfile
   #Dockerfile
-FROM golang:1.24-alpine AS builder
+FROM golang:1.24-alpine
 WORKDIR /app
 COPY go.mod .
 COPY main.go .
@@ -148,8 +148,11 @@ The Deployment resource should:
  - Use an imagePullPolicy of `never` (This is a hack/workaround due to not using an actual registry)
  - 
 
-A Service resource with a type "ClusterIP", which provides a stable IP endpoint for other workloads in your cluster to communicate with our new workload
+A Service resource with a type "NodePort", which provides a stable IP endpoint for other workloads in your cluster to communicate with our new workload, and exposes our service external to the cluster via a port.
+
+
 The Service Resource should:
+ - have a Service type of NodePort so we can access our API externally
  - expose port 80, but target port 8080
  - Route traffic to pods with the labels of `app: awesome-api`
 
@@ -163,7 +166,7 @@ kind: Service
 metadata:
   name: awesome-api
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
   - port: 80
     targetPort: 8080
