@@ -11,17 +11,13 @@ In this lab, you will learn how to:
 
 ### Getting Started
 
-The lab assumes you are using MacOS. To start, make sure you have brew installed! 
 
-The lab uses [Taskfiles](https://taskfile.dev) to automate management of the lab, install it:
-
-`brew install go-task/tap/go-task`
+The lab uses [Taskfiles](https://taskfile.dev) to automate management of the lab.
 
 You will also need either docker or podman as a container runtime, please install one of the following:
 
 - Docker Desktop
 - Podman
-
 
 With all of that out of the way, start the lab by running the following:
 
@@ -293,7 +289,7 @@ Now lets check out logs for our app, do you still see requests coming in?
 kubectl logs -l app=awesome-api -f --since 5m
 ```
 
-We want to further observe the activity of our malicious container. In our lab setup, we installed
+We want to further observe the activity of our malicious container. In our lab setup, we installed [Tetragon](https://tetragon.io/docs/overview/) onto our cluster. Tetragon is a Kubernetes aware runtime security tool. Tetragon relies on a technology known as the Extended Berkeley Packet Filter, or eBPF, that allows programs to be run directly within the Linux kernel, without modifying the code. Tetragon has insight into the [system calls (syscalls)](https://man7.org/linux/man-pages/man2/syscalls.2.html) that are being made by applications and processes in our cluster. Lets create a TracingPolicy to observe network traffic in our cluster, and potientially find the C2 being utilized. Create a file named `tetragon-network-traffic.yml` with the following: 
 
 
 ```yaml
@@ -316,9 +312,19 @@ spec:
         - 127.0.0.1
 ```
 
+apply it with the following command:
+
+```bash
+kubectl apply -f tetragon-network-traffic.yml
+```
+
+Now we can observe the TCP network traffic related to the `evil-here` namespace:
+
 ```bash
 kubectl exec -ti -n kube-system ds/tetragon -c tetragon -- tetra getevents -o compact --namespace evil-here
 ```
+
+
 
 For now, lets evict the evil-pod from our system:
 
