@@ -1,4 +1,4 @@
-# Kubernetes Security lab with Minikube!
+# Kubernetes Security Lab with Minikube!
 
 In this lab, you will learn how to:
 
@@ -10,7 +10,6 @@ In this lab, you will learn how to:
 
 
 ### Getting Started
-
 
 The lab uses [Taskfiles](https://taskfile.dev) to automate management of the lab.
 
@@ -27,15 +26,15 @@ task labs:start
 
 This may take a few minutes to run.
 
-# Step zero - getting familiar with kubectl (kube-cuddle, kube-control, or kube-C-T-L)
+# Step Zero - Getting Familiar with kubectl (kube-cuddle, kube-control, or kube-C-T-L)
 
-Most interactions with K8s are performed via kubectl, a CLI tool designed for interacting with the Kubernetes API Server. We can use the built in whoami command to figure out what authentication context we are running in:
+Most interactions with K8s are performed via kubectl, a CLI tool designed for interacting with the Kubernetes API Server. We can use the built-in whoami command to figure out what authentication context we are running in:
 
 ```bash
 kubectl auth whoami
 ```
 
-Kubectl relies on configurations (and sometimes credentials) in a file known as the `kubeconfig` file. Lets take a look at ours:
+Kubectl relies on configurations (and sometimes credentials) in a file known as the `kubeconfig` file. Let's take a look at ours:
 
 ```bash
 cat ~/.kube/config
@@ -49,7 +48,7 @@ Kubernetes applications and configurations are expressed via "Resources". We can
 kubectl api-resources
 ```
 
-Seem overwhelming? Don't worry, we will only need a small number of these in the lab. Each of these resources has its own configurations. Lucky for us, kubectl has a built in command that allows us to retrieve the fields and associated documentation. Lets try this for the `pod` resource type:
+Seem overwhelming? Don't worry, we will only need a small number of these in the lab. Each of these resources has its own configurations. Lucky for us, kubectl has a built-in command that allows us to retrieve the fields and associated documentation. Let's try this for the `pod` resource type:
 
 ```bash
 kubectl explain pod
@@ -60,7 +59,7 @@ kubectl explain pod.spec
 ```
 
 
-Lets use some basic commands to see whats on our running cluster:
+Let's use some basic commands to see what's on our running cluster:
 
 ```bash
 kubectl get namespaces
@@ -71,16 +70,15 @@ kubectl get validatingadmissionpolicy
 
 --------
 
-# Step one - Deploy our awesome api service
+# Step One - Deploy Our Awesome API Service
 
 Congratulations, you have just finished developing your prototype AWESOME API, and are now ready to deploy it straight into production, right!?
 
 To deploy our image into Kubernetes, we now need to package it up into a container. Start by browsing to the `student_resources/our-awesome-api` directory, where the source code for our awesome api. 
 
-Create a file named `Dockerfile` in that directory. Dockerfile consist of a list of instructions on how to build, package, and run your application. More information here: https://docs.docker.com/reference/dockerfile/
+Create a file named `Dockerfile` in that directory. Dockerfiles consist of a list of instructions on how to build, package, and run your application. More information here: https://docs.docker.com/reference/dockerfile/
 
-Use the following guidelines to build you 
- Use the `golang:1.24-alpine` base image, copy the `go.mod` and `main.go` files into the container, and execute the `go build -o api` command to build our application and output. Finally, add an `ENTRYPOINT` that points to the binary you output. 
+Use the following guidelines to build your container: Use the `golang:1.24-alpine` base image, copy the `go.mod` and `main.go` files into the container, and execute the `go build -o api` command to build our application and output. Finally, add an `ENTRYPOINT` that points to the binary you output. 
 
 <details>
   <summary>Answer</summary>
@@ -99,7 +97,7 @@ ENTRYPOINT ["./api"]
   ```
 </details>
 
-Next, we need to actually build our container and make it available to the cluster. For the purpose of the lab, we are going to utilize the docker daemon that exists in the Minikube cluster itself. In the real world, we would publish to a container registry such as [Google Artifact Registry](), [Elastic Container Registry](), [GitHub Container Registry](), or other options. This allows us to build a container image and make it available to the cluster without having to host a container registry. Minikube provides a command to make this easy for us:
+Next, we need to actually build our container and make it available to the cluster. For the purpose of the lab, we are going to utilize the docker daemon that exists in the Minikube cluster itself. In the real world, we would publish to a container registry such as Google Artifact Registry, Elastic Container Registry, GitHub Container Registry, or other options. This allows us to build a container image and make it available to the cluster without having to host a container registry. Minikube provides a command to make this easy for us:
 
 ```bash
 eval $(minikube docker-env)
@@ -125,7 +123,7 @@ registry.k8s.io/pause                       3.10       afb61768ce38   11 months 
 gcr.io/k8s-minikube/storage-provisioner     v5         ba04bb24b957   4 years ago     29MB
 ```
 
-Finally, lets build and tag our container image:
+Finally, let's build and tag our container image:
 
 ```bash
 docker build . -t awesome-api:v1.0
@@ -155,8 +153,9 @@ The Service Resource should:
 Create this in a file named `awesome-api-service.yml`
 
 <details>
-  <summary>**Answer**</summary>
-    ```yaml
+  <summary>Answer</summary>
+  
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -189,25 +188,25 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 8080
-    ```
+```
 </details>
 
-With our `awesome-api-service.yml` file created, lets deploy it! 
+With our `awesome-api-service.yml` file created, let's deploy it! 
 
 
 ```bash
 kubectl apply -f awesome-api-service.yml & kubectl get pods -w
 ```
 
-The `-w` flag lets you watch resource changes in realtime. When your awesome-api pod flips to `Running` status, presss ctrl+c to stop watching and return to your regular terminal.
+The `-w` flag lets you watch resource changes in realtime. When your awesome-api pod flips to `Running` status, press ctrl+c to stop watching and return to your regular terminal.
 
-When it comes to containerized (and modern/cloud native in general) applications, logs should be [emitted via stdout](https://12factor.net/logs), where other services can collect, enrich, and route them. Kubernetes natively provides the ability to observe a running containers stdout messages using kubectl. Lets observe the logs of our newly running API service:
+When it comes to containerized (and modern/cloud native in general) applications, logs should be [emitted via stdout](https://12factor.net/logs), where other services can collect, enrich, and route them. Kubernetes natively provides the ability to observe a running container's stdout messages using kubectl. Let's observe the logs of our newly running API service:
 
 ```bash
 kubectl logs -l app=awesome-api -f
 ```
 
-Notice anything interesting about the logs being produced? The endpoints being requested? Pods in Kubernetes are also granted an individual IP address. Lets see if we can figure out what is querying our API endpoint with some very interesting queries. Make note of the source IP in our logs that the request is coming from. Kubectl is incredibly powerful, and supports tons of [different output options](https://kubernetes.io/docs/reference/kubectl/quick-reference/#formatting-output), we can use the following kubectl command to list all pods, with their associated namespaces and IP addresses:
+Notice anything interesting about the logs being produced? The endpoints being requested? Pods in Kubernetes are also granted an individual IP address. Let's see if we can figure out what is querying our API endpoint with some very interesting queries. Make note of the source IP in our logs that the request is coming from. Kubectl is incredibly powerful, and supports tons of [different output options](https://kubernetes.io/docs/reference/kubectl/quick-reference/#formatting-output), we can use the following kubectl command to list all pods, with their associated namespaces and IP addresses:
 
 ```bash
 kubectl get pods -A -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,IP:.status.podIP
@@ -217,10 +216,11 @@ What pod is making requests to our API endpoint? What namespace is it in?
 
 
 <details>
-  <summary>**Answer**</summary>
+  <summary>Answer</summary>
+  
 There is an "evil-pod" pod residing in the "evil-here" namespace that is making the calls to our API endpoint, attempting to enumerate URL paths that might resolve to something interesting: 
 
-    ```bash
+```bash
 kubectl get pods -A -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,IP:.status.podIP
 
 NAMESPACE     NAME                                       IP
@@ -229,7 +229,7 @@ evil-here     evil-pod                                   10.244.120.76  <- SUSPI
 ...
 ...
 ...
-    ```
+```
 </details>
 
 ## Step 2 - Oh No, Evil!
@@ -241,9 +241,9 @@ Kubernetes supports the [NetworkPolicy](https://kubernetes.io/docs/concepts/serv
 With that in mind, let's use a NetworkPolicy to isolate the evil-pod and evil-namespace, and prevent further communication to other pods. 
 
 1. Start by creating the file `namespace-net-isolation.yml`
-2. We want to isolate all local egress traffic from the pod, and only allow internet bound traffic (so we can observe any potiential C2 activity)
+2. We want to isolate all local egress traffic from the pod, and only allow internet bound traffic (so we can observe any potential C2 activity)
 3. This should be scoped for the `evil-here` namespace
-4. To avoid accidentally applying this elsewhere, lets explictly specify the namespace in the manifest
+4. To avoid accidentally applying this elsewhere, let's explicitly specify the namespace in the manifest
 5. Consider blocking IPv6 and the Cloud Instance Metadata Service too :smile:
 
 <details>
@@ -277,19 +277,19 @@ spec:
 ```
 </details>
 
-Once we have created our NetworkPolicy, lets apply it:
+Once we have created our NetworkPolicy, let's apply it:
 
 ```bash
 kubectl apply -f namespace-net-isolation.yml
 ```
 
-Now lets check out logs for our app, do you still see requests coming in?
+Now let's check out logs for our app, do you still see requests coming in?
 
 ```bash
 kubectl logs -l app=awesome-api -f --since 5m
 ```
 
-We want to further observe the activity of our malicious container. In our lab setup, we installed [Tetragon](https://tetragon.io/docs/overview/) onto our cluster. Tetragon is a Kubernetes aware runtime security tool. Tetragon relies on a technology known as the Extended Berkeley Packet Filter, or eBPF, that allows programs to be run directly within the Linux kernel, without modifying the code. Tetragon has insight into the [system calls (syscalls)](https://man7.org/linux/man-pages/man2/syscalls.2.html) that are being made by applications and processes in our cluster. Lets create a TracingPolicy to observe network traffic in our cluster, and potientially find the C2 being utilized. Create a file named `tetragon-network-traffic.yml` with the following: 
+We want to further observe the activity of our malicious container. In our lab setup, we installed [Tetragon](https://tetragon.io/docs/overview/) onto our cluster. Tetragon is a Kubernetes aware runtime security tool. Tetragon relies on a technology known as the Extended Berkeley Packet Filter, or eBPF, that allows programs to be run directly within the Linux kernel, without modifying the code. Tetragon has insight into the [system calls (syscalls)](https://man7.org/linux/man-pages/man2/syscalls.2.html) that are being made by applications and processes in our cluster. Let's create a TracingPolicy to observe network traffic in our cluster, and potentially find the C2 being utilized. Create a file named `tetragon-network-traffic.yml` with the following: 
 
 
 ```yaml
@@ -312,7 +312,7 @@ spec:
         - 127.0.0.1
 ```
 
-apply it with the following command:
+Apply it with the following command:
 
 ```bash
 kubectl apply -f tetragon-network-traffic.yml
@@ -324,22 +324,84 @@ Now we can observe the TCP network traffic related to the `evil-here` namespace:
 kubectl exec -ti -n kube-system ds/tetragon -c tetragon -- tetra getevents -o compact --namespace evil-here
 ```
 
-
-
-For now, lets evict the evil-pod from our system:
+For now, let's evict the evil-pod from our system:
 
 ```bash
 kubectl delete pod evil-pod -n evil-here
 ```
 
-# Step three - container hardening
+
+# Step Three - exploiting a vulnerable service
+
+Now that we've deployed our API and addressed the malicious pod, let's explore another security aspect: attacking services hosted on Kubernetes.
+
+Our awesome-api service is exposed outside our cluster through a `NodePort` service. While we can use kubectl to get the `ClusterIP` of our service, that other services and the evil pod were using to interact with the API, to access it externally, we need to know the IP address of the node and ports it is exposed on. Minikube has a command for that:
+
+```bash
+minikube service list
+```   
+
+This command will show a list of all services and their respective URLs. Note the IP address and port number assigned to our awesome-api service.
+
+Looking through the the source code of our awesome-api, you might notice that our awesome-api has a `/getPhoto` endpoint that accepts a path parameter. This endpoint was intended to serve images from a specific directory, but it has a critical vulnerability: path traversal. This type of vulnerability allows attackers to read files from anywhere on the filesystem by manipulating the path parameter.
+
+Let's exploit this vulnerability to steal a Kubernetes service account token. Typically the token for this account is mounted at a specific path inside the container at the following path `/var/run/secrets/kubernetes.io/serviceaccount/token`:
+
+```bash
+curl 192.168.49.2:30463/getPhoto?path=/var/run/secrets/kubernetes.io/serviceaccount/token
+```
+
+Kubernetes Service account tokens are signed JSON Web Tokens (JWTs) issued by the cluster to allow workloads to communicate with the API server. We can examine the jwt using the [https://jwt.io/] website for more information.
 
 
+While the vulnerability in this lab is more academic, the underlying concept applies to the real world. A [recent vulnerability dubbed "Ingress Nightmare"](https://securitylabs.datadoghq.com/articles/ingress-nightmare-vulnerabilities-overview-and-remediation/) involved a similiar mechanism of exploit, where a user could provide a crafted payload to run arbitrary code. The Nginx Ingress service has a service account attached to its pods that have a ClusterRole associated with them, allowing access to all secrets objects in the cluster. Those secrets could then be enumerated for other credentials useful in a lateral movement scenario.  
 
-# Step four - exploiting a vulnerable service
+# Step Four - container hardening
 
 
 # Step five - control plane hardening
+
+```yaml
+apiVersion: admissionregistration.k8s.io/v1 
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: prevent-default-namespace
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups: ["*"]
+      apiVersions: ["*"] 
+      operations: ["CREATE"]
+      resources: ["*"]
+  validations:
+  - expression: "object.metadata.namespace != 'default'"
+    message: "Resource creation is not allowed in the default namespace"
+
+```
+
+```yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: prevent-default-namespace-binding
+spec:
+  policyName: prevent-default-namespace
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: default
+
+```
+
+```bash
+kubectl run busy --image busybox:latest
+```
+
+```bash
+The pods "busy1" is invalid: : ValidatingAdmissionPolicy 'prevent-default-namespace' with binding 'prevent-default-namespace-binding' denied request: Resource creation is not allowed in the default namespace
+```
 
 
     
