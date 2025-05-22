@@ -152,12 +152,9 @@ A Deployment resource that contains a pod template for our `awesome-api:v1.0` co
 The Deployment resource should:
  - Use an imagePullPolicy of `never` (This is a hack/workaround due to not using an actual registry)
  - Run a single replica
-
-A Service resource with a type "NodePort", which provides a stable IP endpoint for other workloads in your cluster to communicate with our new workload, and exposes our service external to the cluster via a port.
-
-
+ß
 The Service Resource should:
- - have a Service type of NodePort so we can access our API externally
+ - have a Service type of NodePort so we can access our API externally from the cluster
  - expose port 80, but target port 8080
  - Route traffic to pods with the labels of `app: awesome-api`
 
@@ -470,7 +467,6 @@ spec:
         ports:
         - containerPort: 8080
 ```
-
 </details>
 
 

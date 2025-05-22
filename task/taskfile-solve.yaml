@@ -1,0 +1,178 @@
+version: '3'
+
+tasks:
+
+  step1:deploy-api:
+    desc: Build and deploy the awesome API service
+    dir: student_resources/our-awesome-api
+    cmds:
+      - eval $(minikube docker-env)
+      - |
+        cat > Dockerfile << 'EOF'
+        FROM golang:1.24-alpine
+        WORKDIR /app
+        COPY go.mod .
+        COPY main.go .
+        RUN CGO_ENABLED=0 go build -o api -v
+        EXPOSE 8080
+        ENTRYPOINT ["./api"]
+        EOF
+      - docker build . -t awesome-api:v1.0
+      - |
+        cat > awesome-api-service.yml << 'EOF'
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: awesome-api
+        spec:
+          type: NodePort
+          ports:
+          - port: 80
+            targetPort: 8080
+          selector:
+            app: awesome-api
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: awesome-api
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: awesome-api
+          template:
+            metadata:
+              labels:
+                app: awesome-api
+            spec:
+              containers:
+              - name: awesome-api
+                image: awesome-api:v1.0
+                imagePullPolicy: Never
+                ports:
+                - containerPort: 8080
+        EOF
+      - kubectl apply -f awesome-api-service.yml
+      - kubectl get pods -w
+
+  step2:isolate-evil:
+    desc: Create a NetworkPolicy to isolate the evil pod
+    cmds:
+      - |
+        cat > namespace-net-isolation.yml << 'EOF'
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        metadata:
+          namespace: evil-here
+          name: deny-private-egress
+        spec:
+          podSelector: {}
+          policyTypes:
+          - Egress
+          egress:
+          - to:
+            - ipBlock:
+                cidr: 0.0.0.0/0
+                except:
+                - 10.0.0.0/8
+                - 172.16.0.0/12
+                - 192.168.0.0/16
+                - 169.254.169.254/32
+            - ipBlock:
+                cidr: "::/0"
+                except:
+                - fc00::/7
+                - fe80::/10
+                - fd00::/8
+        EOF
+      - kubectl apply -f namespace-net-isolation.yml
+      - kubectl logs -l app=awesome-api -f --since 5m
+
+  step3:monitor-network:
+    desc: Monitor network traffic with Tetragon
+    cmds:
+      - |
+        cat > tetragon-network-traffic.yml << 'EOF'
+        apiVersion: cilium.io/v1alpha1
+        kind: TracingPolicy
+        metadata:
+          name: "monitor-network-activity-outside-cluster-cidr-range"
+        spec:
+          kprobes:
+          - call: "tcp_connect"
+            syscall: false
+            args:
+            - index: 0
+              type: "sock"
+            selectors:
+            - matchArgs:
+              - index: 0
+                operator: "NotDAddr"
+                values:
+                - 127.0.0.1
+        EOF
+      - kubectl apply -f tetragon-network-traffic.yml
+      - kubectl exec -ti -n kube-system ds/tetragon -c tetragon -- tetra getevents -o compact --namespace evil-here
+      - kubectl delete pod evil-pod -n evil-here
+
+  step4:harden-container:
+    desc: Harden the container by removing the vulnerability
+    dir: student_resources/base/our-awesome-api
+    cmds:
+      - eval $(minikube docker-env)
+      - |
+        # Update the deployment to not mount service account token
+        kubectl patch deployment awesome-api --type=json -p='[{"op": "add", "path": "/spec/template/spec/automountServiceAccountToken", "value": false}]'
+      - kubectl rollout restart deployment awesome-api
+      - |
+        # Remove the vulnerable code from main.go
+        sed -i '/func getPhotoHandler/,/^}/d' main.go
+        sed -i '/http.HandleFunc("\/getPhoto", getPhotoHandler)/d' main.go
+      - docker build . -t awesome-api:v1.1
+      - kubectl set image deployment/awesome-api awesome-api=awesome-api:v1.1
+
+  step5:control-plane-hardening:
+    desc: Add admission control to prevent resource creation in default namespace
+    cmds:
+      - |
+        cat > prevent-default-namespace.yml << 'EOF'
+        apiVersion: admissionregistration.k8s.io/v1 
+        kind: ValidatingAdmissionPolicy
+        metadata:
+          name: prevent-default-namespace
+        spec:
+          failurePolicy: Fail
+          matchConstraints:
+            resourceRules:
+            - apiGroups: ["*"]
+              apiVersions: ["*"] 
+              operations: ["CREATE"]
+              resources: ["*"]
+          validations:
+          - expression: "object.metadata.namespace != 'default'"
+            message: "Resource creation is not allowed in the default namespace"
+        ---
+        apiVersion: admissionregistration.k8s.io/v1
+        kind: ValidatingAdmissionPolicyBinding
+        metadata:
+          name: prevent-default-namespace-binding
+        spec:
+          policyName: prevent-default-namespace
+          validationActions: [Deny]
+          matchResources:
+            namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: default
+        EOF
+      - kubectl apply -f prevent-default-namespace.yml
+      - kubectl run busy --image busybox:latest || echo "Policy successfully blocked pod creation in default namespace"
+
+  solve-all:
+    desc: Run all steps to solve the lab
+    cmds:
+      - task: step1:deploy-api
+      - task: step2:isolate-evil
+      - task: step3:monitor-network
+      - task: step4:harden-container
+      - task: step5:control-plane-hardening
