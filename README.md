@@ -364,6 +364,81 @@ curl YOUR_NODE_IP:PORT/getPhoto?path=/var/run/secrets/kubernetes.io/serviceaccou
 
 Kubernetes Service account tokens are signed JSON Web Tokens (JWTs) issued by the cluster to allow workloads to communicate with the API server. We can examine the jwt using the [https://jwt.io/] website for more information. What service account was this issued for? Are there any other interesting bits of information we can observe?
 
+Lets use our token to see if we can get up to anything nefarious on the cluster. Open `~/.kube/config`, comment out the `client-certificate` and `client-key` fields, and add a `token` field in their place. It should look similiar to the following:
+
+```yaml
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority: /home/student/.minikube/ca.crt
+    extensions:
+    - extension:
+        last-update: Thu, 22 May 2025 03:53:59 UTC
+        provider: minikube.sigs.k8s.io
+        version: v1.35.0
+      name: cluster_info
+    server: https://192.168.49.2:8443
+  name: minikube
+contexts:
+- context:
+    cluster: minikube
+    extensions:
+    - extension:
+        last-update: Thu, 22 May 2025 03:53:59 UTC
+        provider: minikube.sigs.k8s.io
+        version: v1.35.0
+      name: context_info
+    namespace: default
+    user: minikube
+  name: minikube
+current-context: minikube
+kind: Config
+preferences: {}
+users:
+- name: minikube
+  user:
+    token: YOUR_JWT_HERE
+    #client-certificate: /home/student/.minikube/profiles/minikube/client.crt
+    #client-key: /home/student/.minikube/profiles/minikube/client.key
+```
+
+Lets start with some simple recon/enumeration. What privileges does our token have? 
+
+<details>
+  <summary>Answer</summary>
+  
+What identity do we have?
+
+```bash
+kubectl auth whoami
+```
+
+What permissions does our identity have?
+
+```bash
+kubectl auth can-i --list
+```
+
+</details>
+
+Once you figure out what privileges your stolen token has, can you access anything interesting with it?
+
+<details>
+  <summary>Answer</summary>
+
+Try listing all of the secrets in the cluster:  
+
+```bash
+kubectl get secrets -A
+```
+
+There are several interesting looking secrets that could be stolen and abused here.
+
+</details>
+
+
+
+
 While the vulnerability in this lab is more academic, the underlying concept applies to the real world. A [recent vulnerability dubbed "Ingress Nightmare"](https://securitylabs.datadoghq.com/articles/ingress-nightmare-vulnerabilities-overview-and-remediation/) involved a similiar mechanism of exploit, where a user could provide a crafted payload to run arbitrary code. The Nginx Ingress service has a service account attached to its pods that have a ClusterRole associated with them, allowing access to all secrets objects in the cluster. Those secrets could then be enumerated for other credentials useful in a lateral movement scenario.  
 
 # Step Four - container hardening
@@ -472,7 +547,7 @@ spec:
 
 ----------------
 
-# Step four - control plane hardening
+# Step five - control plane hardening
 
 [ValidatingAdmissionPolicy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/) and admission control in Kubernetes in general is a super powerful mechanism for implementing prevenative controls. There are [numerous](https://github.com/kubescape/cel-admission-library) [controls](https://kyverno.io/policies/) [we](https://open-policy-agent.github.io/gatekeeper-library/website/) can enforce using these, from enforcing standard names, labels, and annotations, to preventing insecure configurations altogether. We will use a fairly simple example to demonstrate the capability; we will prevent deployments to the `default` namespace.
 
