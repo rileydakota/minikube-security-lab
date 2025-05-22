@@ -441,6 +441,8 @@ There are several interesting looking secrets that could be stolen and abused he
 
 While the vulnerability in this lab is more academic, the underlying concept applies to the real world. A [recent vulnerability dubbed "Ingress Nightmare"](https://securitylabs.datadoghq.com/articles/ingress-nightmare-vulnerabilities-overview-and-remediation/) involved a similiar mechanism of exploit, where a user could provide a crafted payload to run arbitrary code. The Nginx Ingress service has a service account attached to its pods that have a ClusterRole associated with them, allowing access to all secrets objects in the cluster. Those secrets could then be enumerated for other credentials useful in a lateral movement scenario.  
 
+------------------------
+
 # Step Four - container hardening
 
 So it turns out that our application had a vulnerability that allowed access to the service account credentials on the pod, which had privileges to perform other privileged actions in our cluster. We should probably fix this.
