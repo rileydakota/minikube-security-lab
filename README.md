@@ -138,6 +138,7 @@ Finally, let's build and tag our container image:
 ```bash
 docker build . -t awesome-api:v1.0
 ```
+-----------
 
 Now that our image is built and published to the Docker runtime within our cluster, we need to create the resources that represent our application on the minikube cluster. Kubectl offers two methods for creating and managing resources on our clusters:
 
@@ -150,7 +151,7 @@ For this step, we will utilize declarative configuration by creating a manifest 
 A Deployment resource that contains a pod template for our `awesome-api:v1.0` container
 The Deployment resource should:
  - Use an imagePullPolicy of `never` (This is a hack/workaround due to not using an actual registry)
- - 
+ - Run a single replica
 
 A Service resource with a type "NodePort", which provides a stable IP endpoint for other workloads in your cluster to communicate with our new workload, and exposes our service external to the cluster via a port.
 
@@ -241,6 +242,8 @@ evil-here     evil-pod                                   10.244.120.76  <- SUSPI
 ...
 ```
 </details>
+
+--------------
 
 ## Step 2 - Oh No, Evil!
 
@@ -340,6 +343,7 @@ For now, let's evict the evil-pod from our system:
 kubectl delete pod evil-pod -n evil-here
 ```
 
+------------
 
 # Step Three - exploiting a vulnerable service
 
@@ -358,10 +362,10 @@ Looking through the the source code of our awesome-api, you might notice that ou
 Let's exploit this vulnerability to steal a Kubernetes service account token. Typically the token for this account is mounted at a specific path inside the container at the following path `/var/run/secrets/kubernetes.io/serviceaccount/token`:
 
 ```bash
-curl 192.168.49.2:30463/getPhoto?path=/var/run/secrets/kubernetes.io/serviceaccount/token
+curl YOUR_NODE_IP:PORT/getPhoto?path=/var/run/secrets/kubernetes.io/serviceaccount/token
 ```
 
-Kubernetes Service account tokens are signed JSON Web Tokens (JWTs) issued by the cluster to allow workloads to communicate with the API server. We can examine the jwt using the [https://jwt.io/] website for more information.
+Kubernetes Service account tokens are signed JSON Web Tokens (JWTs) issued by the cluster to allow workloads to communicate with the API server. We can examine the jwt using the [https://jwt.io/] website for more information. What service account was this issued for? Are there any other interesting bits of information we can observe?
 
 While the vulnerability in this lab is more academic, the underlying concept applies to the real world. A [recent vulnerability dubbed "Ingress Nightmare"](https://securitylabs.datadoghq.com/articles/ingress-nightmare-vulnerabilities-overview-and-remediation/) involved a similiar mechanism of exploit, where a user could provide a crafted payload to run arbitrary code. The Nginx Ingress service has a service account attached to its pods that have a ClusterRole associated with them, allowing access to all secrets objects in the cluster. Those secrets could then be enumerated for other credentials useful in a lateral movement scenario.  
 
