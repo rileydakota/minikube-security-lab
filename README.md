@@ -470,9 +470,19 @@ spec:
 </details>
 
 
+----------------
+
+# Step four - control plane hardening
+
+[ValidatingAdmissionPolicy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/) and admission control in Kubernetes in general is a super powerful mechanism for implementing prevenative controls. There are [numerous](https://github.com/kubescape/cel-admission-library) [controls](https://kyverno.io/policies/) [we](https://open-policy-agent.github.io/gatekeeper-library/website/) can enforce using these, from enforcing standard names, labels, and annotations, to preventing insecure configurations altogether. We will use a faily simple example to demonstrate the capability; we will prevent deployments to the `default` namespace.
+
+Write a ValidatingAdmissionPolicy that prevents creation of new resources in the `default` namepsace:
 
 
-# Step five - control plane hardening
+<details>
+  <summary>Answer</summary>
+
+  Create the following files:
 
 ```yaml
 apiVersion: admissionregistration.k8s.io/v1 
@@ -490,7 +500,6 @@ spec:
   validations:
   - expression: "object.metadata.namespace != 'default'"
     message: "Resource creation is not allowed in the default namespace"
-
 ```
 
 ```yaml
@@ -508,9 +517,22 @@ spec:
 
 ```
 
+Apply them using kubectl:
+
+```bash
+kubectl apply -f my_policy_files.yml
+```
+
+</details>
+
+
+After applying the policy, lets test it in real time:
+
 ```bash
 kubectl run busy --image busybox:latest
 ```
+
+You should receive the following error:
 
 ```bash
 The pods "busy1" is invalid: : ValidatingAdmissionPolicy 'prevent-default-namespace' with binding 'prevent-default-namespace-binding' denied request: Resource creation is not allowed in the default namespace
