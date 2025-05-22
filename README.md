@@ -405,7 +405,7 @@ spec:
 
 After configuring the Service Account Token to not automatically mount, lets try the vulnerabilty from the previous step again to retrieve the Service Account Token. Does it work?
 
-Now that we have removed the ServiceAccountToken, we should also remove the code in question that allows the directory traversal vulnerability. Browse to the application code in `student_resources/base/our-awesome-api` and open `main.go`. Find and remove the code that is responsible for the vulnerability. It is okay to remove the feature here :smile:. In the real world, we would likely code migitations that prevent the user from accessing unintended files in the GetPhotos function, or move it to a more exclicit storage backend like GCS.
+Now that we have removed the ServiceAccountToken, we should also remove the code in question that allows the directory traversal vulnerability. Browse to the application code in `student_resources/base/our-awesome-api` and open `main.go`. Find and remove the code that is responsible for the vulnerability. It is okay to remove the feature here :smile:. In the real world, we would likely code mitigations that prevent the user from accessing unintended files in the GetPhotos function, or move it to a more explicit storage backend like GCS.
 
 <details>
   <summary>Answer</summary>
@@ -474,9 +474,9 @@ spec:
 
 # Step four - control plane hardening
 
-[ValidatingAdmissionPolicy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/) and admission control in Kubernetes in general is a super powerful mechanism for implementing prevenative controls. There are [numerous](https://github.com/kubescape/cel-admission-library) [controls](https://kyverno.io/policies/) [we](https://open-policy-agent.github.io/gatekeeper-library/website/) can enforce using these, from enforcing standard names, labels, and annotations, to preventing insecure configurations altogether. We will use a faily simple example to demonstrate the capability; we will prevent deployments to the `default` namespace.
+[ValidatingAdmissionPolicy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/) and admission control in Kubernetes in general is a super powerful mechanism for implementing prevenative controls. There are [numerous](https://github.com/kubescape/cel-admission-library) [controls](https://kyverno.io/policies/) [we](https://open-policy-agent.github.io/gatekeeper-library/website/) can enforce using these, from enforcing standard names, labels, and annotations, to preventing insecure configurations altogether. We will use a fairly simple example to demonstrate the capability; we will prevent deployments to the `default` namespace.
 
-Write a ValidatingAdmissionPolicy that prevents creation of new resources in the `default` namepsace:
+Write a ValidatingAdmissionPolicy that prevents creation of new resources in the `default` namespace:
 
 
 <details>
