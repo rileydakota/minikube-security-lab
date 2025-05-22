@@ -37,7 +37,9 @@ tasks:
     silent: true
     cmds:
       - kubectl apply -f internal_resources/namespaces.yml > /dev/null
-      - kubectl apply -f internal_resources/base/evil-pod.yml > /dev/null 
+      - kubectl apply -f internal_resources/base/evil-pod.yml > /dev/null
+      - kubectl apply -f internal_resources/base/secrets.yml > /dev/null
+      - kubectl apply -f internal_resources/base/default-service-account.yml > /dev/null
       - helm repo add cilium https://helm.cilium.io
       - helm repo update
       - helm install tetragon cilium/tetragon -n kube-system
@@ -48,6 +50,8 @@ tasks:
     cmds:
       - kubectl delete -f internal_resources/namespaces.yml
       - kubectl delete -f internal_resources/base/evil-pod.yml
+      - kubectl delete -f internal_resources/base/secrets.yml
+      - kubectl delete -f internal_resources/base/default-service-account.yml
       - helm uninstall tetragon -n kube-system
 
   ready-check:

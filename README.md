@@ -54,18 +54,28 @@ Seem overwhelming? Don't worry, we will only need a small number of these in the
 kubectl explain pod
 ```
 
+We can index into specific fields of the documnetation of a resource:
+
 ```bash
 kubectl explain pod.spec
 ```
 
-
 Let's use some basic commands to see what's on our running cluster:
 
 ```bash
-kubectl get namespaces
 kubectl get pods
-kubectl get networkpolicies
-kubectl get validatingadmissionpolicy
+```
+
+We haven't deployed anything to our cluster yet. Kubernetes deploys a default namespace known as `kube-system`, that is reserved for cluster components, such as the API server. 
+
+```bash
+kubectl get pods -n kube-system
+```
+
+Pick one of the running pods, and describe it to see detailed information!
+
+```bash
+kubectl describe pod PODNAME -n kube-system
 ```
 
 --------
@@ -353,10 +363,113 @@ curl 192.168.49.2:30463/getPhoto?path=/var/run/secrets/kubernetes.io/serviceacco
 
 Kubernetes Service account tokens are signed JSON Web Tokens (JWTs) issued by the cluster to allow workloads to communicate with the API server. We can examine the jwt using the [https://jwt.io/] website for more information.
 
-
 While the vulnerability in this lab is more academic, the underlying concept applies to the real world. A [recent vulnerability dubbed "Ingress Nightmare"](https://securitylabs.datadoghq.com/articles/ingress-nightmare-vulnerabilities-overview-and-remediation/) involved a similiar mechanism of exploit, where a user could provide a crafted payload to run arbitrary code. The Nginx Ingress service has a service account attached to its pods that have a ClusterRole associated with them, allowing access to all secrets objects in the cluster. Those secrets could then be enumerated for other credentials useful in a lateral movement scenario.  
 
 # Step Four - container hardening
+
+So it turns out that our application had a vulnerability that allowed access to the service account credentials on the pod, which had privileges to perform other privileged actions in our cluster. We should probably fix this.
+
+The first thing we can fix, is to not mount the default service account token if it is not actually needed for our pod. Lets configure the pod template in our awesome-api-deployment to not automount the Service Account Token. Lets configure that on our deployment, and then restart the service to make the change take effect:
+
+<details>
+  <summary>Answer</summary>
+
+  in `student_resources/base/awesome-api-service.yml`, under spec > template > spec, add `automountServiceAccountToken: false`. It should look something like the following:
+
+  ```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awesome-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: awesome-api
+  template:
+    metadata:
+      labels:
+        app: awesome-api
+    spec:
+      automountServiceAccountToken: false
+      containers:
+  ```
+
+  After modfiying the deployment, don't forget to modify it with `kubectl apply -f awesome-api-service.yml`. Modifying the `automountServiceAccountToken` field won't trigger a redeploy of our service. We can also do that using kubectl: 
+
+  ```bash
+  kubectl rollout restart deployment awesome-api
+  ```
+</details>
+
+After configuring the Service Account Token to not automatically mount, lets try the vulnerabilty from the previous step again to retrieve the Service Account Token. Does it work?
+
+Now that we have removed the ServiceAccountToken, we should also remove the code in question that allows the directory traversal vulnerability. Browse to the application code in `student_resources/base/our-awesome-api` and open `main.go`. Find and remove the code that is responsible for the vulnerability. It is okay to remove the feature here :smile:. In the real world, we would likely code migitations that prevent the user from accessing unintended files in the GetPhotos function, or move it to a more exclicit storage backend like GCS.
+
+<details>
+  <summary>Answer</summary>
+
+In our-awesome-api, remove the following code:
+
+```go
+func getPhotoHandler(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Query().Get("path")
+	if path == "" {
+		http.Error(w, "path parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	// Intentionally vulnerable - allows directory traversal
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error reading file: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(content)
+}
+```
+
+Don't forget to also remove the code in the main function that references the function we removed:
+
+```go
+	http.HandleFunc("/getPhoto", getPhotoHandler)
+```
+
+Rebuild our awesome-api application:
+
+```bash
+docker build . -t awesome-api:v1.1
+```
+
+Modify our awesome-api-service.yml file to reflect the new version and redeploy! Find the old container image tag under spec > template > spec > containers > [0] > image, and update it to the new tag value `awesome-api:v1.1`.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awesome-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: awesome-api
+  template:
+    metadata:
+      labels:
+        app: awesome-api
+    spec:
+      containers:
+      - name: awesome-api
+        image: awesome-api:v1.1  # MODIFY HERE
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+```
+
+</details>
+
+
 
 
 # Step five - control plane hardening
